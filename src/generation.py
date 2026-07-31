@@ -45,6 +45,10 @@ def generate(query: str, chunks: list[dict]) -> dict:
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
         ],
+        # Greedy decoding: grounded answers must be reproducible. At Ollama's
+        # default temperature the model non-deterministically refuses on context
+        # that does support an answer.
+        options={"temperature": 0},
     )
     answer = response["message"]["content"].strip()
 

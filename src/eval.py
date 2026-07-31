@@ -30,6 +30,7 @@ def _judge(question: str, context: str, answer: str, criterion: str) -> float:
         messages=[{"role": "user", "content": JUDGE_PROMPT.format(
             question=question, context=context, answer=answer, criterion=criterion,
         )}],
+        options={"temperature": 0},  # reproducible scores across runs
     )
     match = re.search(r"\d", response["message"]["content"])
     return int(match.group()) / 5.0 if match else 0.0
