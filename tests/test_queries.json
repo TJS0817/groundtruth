@@ -1,0 +1,20 @@
+[
+  {
+    "id": "fact_retrieval",
+    "type": "fact",
+    "query": "In FastAPI's CORSMiddleware, what is the default value of the max_age parameter, in seconds?",
+    "expected_facts": ["600", "max_age"]
+  },
+  {
+    "id": "multi_hop",
+    "type": "multi_hop",
+    "query": "How does FastAPI's dependency injection system work together with OAuth2PasswordBearer to protect an endpoint?",
+    "expected_facts": ["Depends", "OAuth2PasswordBearer", "dependency"]
+  },
+  {
+    "id": "negative_out_of_scope",
+    "type": "negative",
+    "query": "What is the boiling point of tungsten in Celsius?",
+    "expected_facts": []
+  }
+]
