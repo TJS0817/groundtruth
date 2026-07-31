@@ -49,6 +49,30 @@ python -m venv .venv
 .venv/Scripts/python.exe scripts/run_eval.py
 ```
 
+## Web UI
+
+A dark, terminal-inspired web UI for asking questions interactively — same
+guardrailed pipeline, no CLI required.
+
+```bash
+.venv/Scripts/python.exe scripts/serve.py
+# open http://127.0.0.1:8000
+```
+
+Ask a question and watch it move through Retrieving → Reranking → Generating →
+Verifying. The result shows a **Grounded** or **Refused** badge, the answer text,
+clickable citation chips that jump to and highlight the matching retrieved chunk,
+and a collapsible list of everything retrieved for that query. Local generation on
+CPU is slow (tens of seconds to a few minutes per question on a 4B model) — the
+staged status track is there so the wait isn't a blank screen.
+
+Built with FastAPI + vanilla HTML/CSS/JS (no frontend framework or build step —
+`web/index.html`, `web/static/style.css`, `web/static/app.js`). The answer is not
+token-streamed: the citation-verification guardrail runs after the full response is
+generated, so streaming partial text would risk showing content the verifier later
+rejects. The typewriter-style reveal you see is a client-side animation of the
+already-verified final answer, not a live stream.
+
 ## Guardrails
 
 The generation prompt permits answers only from retrieved context and requires a

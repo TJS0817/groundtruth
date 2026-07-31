@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RAG System</title>
+<link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M12 12l9-5M12 12v10M12 12L3 7" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>
+      <div>
+        <div class="brand-title">RAG System</div>
+        <div class="brand-sub">Local hybrid retrieval &middot; FastAPI docs corpus</div>
+      </div>
+    </div>
+    <div class="pipeline-badge" title="Fully local pipeline">
+      <span class="dot"></span> qwen3:4b &middot; bge-small &middot; ChromaDB
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="ask-panel" aria-label="Ask a question">
+      <form id="ask-form" autocomplete="off">
+        <label for="question" class="sr-only">Question</label>
+        <div class="input-row">
+          <input id="question" name="question" type="text" placeholder="Ask about FastAPI…" required />
+          <button type="submit" id="submit-btn">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h14m0 0l-6-6m6 6l-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Ask</span>
+          </button>
+        </div>
+      </form>
+
+      <div class="examples" id="examples">
+        <span class="examples-label">Try:</span>
+        <button class="pill" data-q="In FastAPI's CORSMiddleware, what is the default value of the max_age parameter, in seconds?">CORS max_age default</button>
+        <button class="pill" data-q="How does FastAPI's dependency injection system work together with OAuth2PasswordBearer to protect an endpoint?">Dependencies + OAuth2</button>
+        <button class="pill" data-q="What is the boiling point of tungsten in Celsius?">Out-of-scope question</button>
+      </div>
+    </section>
+
+    <section id="thread" class="thread" aria-live="polite" aria-label="Conversation"></section>
+  </main>
+
+  <template id="tpl-turn">
+    <article class="turn">
+      <div class="turn-question"></div>
+      <div class="turn-body">
+        <div class="status-track">
+          <span class="stage" data-stage="retrieve">Retrieving context</span>
+          <span class="stage" data-stage="rerank">Reranking</span>
+          <span class="stage" data-stage="generate">Generating</span>
+          <span class="stage" data-stage="verify">Verifying citations</span>
+        </div>
+        <div class="answer-card" hidden>
+          <div class="answer-header">
+            <span class="badge badge-grounded" hidden>Grounded</span>
+            <span class="badge badge-refused" hidden>Refused &mdash; insufficient grounding</span>
+          </div>
+          <p class="answer-text"></p>
+          <div class="citations"></div>
+        </div>
+        <details class="retrieved-block" hidden>
+          <summary>Retrieved chunks <span class="chunk-count"></span></summary>
+          <div class="chunk-list"></div>
+        </details>
+      </div>
+    </article>
+  </template>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
