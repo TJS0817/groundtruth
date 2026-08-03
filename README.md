@@ -1,8 +1,9 @@
-# Local RAG System
+# GroundTruth
 
 A fully local Retrieval-Augmented Generation pipeline over the FastAPI documentation.
 No API keys, no hosted services — embeddings, reranking, generation, and evaluation
-all run on your machine.
+all run on your machine. Named for what it refuses to compromise on: every answer is
+either grounded in a verified citation, or it says it doesn't know.
 
 ## Use case
 

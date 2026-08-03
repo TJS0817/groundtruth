@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 WEB_DIR = Path(__file__).resolve().parents[1] / "web"
 
-app = FastAPI(title="RAG System")
+app = FastAPI(title="GroundTruth")
 app.mount("/static", StaticFiles(directory=WEB_DIR / "static"), name="static")
 
 

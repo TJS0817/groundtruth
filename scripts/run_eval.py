@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src import eval as eval_
+from . import eval as eval_
 
 if __name__ == "__main__":
     eval_.print_report(eval_.run())
