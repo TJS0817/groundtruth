@@ -96,6 +96,20 @@ answer — while still failing closed: nothing ships without a verified citation
 it. See `tests/test_generation.py` for the behavior under valid/hallucinated/uncited
 citations.
 
+**Known gap: citation checking is structural, not semantic.** It verifies a claim
+cites a chunk that was actually retrieved — it does not verify the claim accurately
+reflects what that chunk says. Confirmed case: asked how dependency injection works
+with `OAuth2PasswordBearer`, the system answered "FastAPI will verify the token...
+if valid" citing `tutorial/security/first-steps.md#Use it` — but that chunk only
+says the dependency "will provide a `str` that is assigned to the parameter `token`,"
+with no claim about verification (actual token validation is covered later, in the
+JWT tutorial). The citation is real and the chunk is real; the claim attached to it
+overstates what the chunk says. This is reproducible (greedy decoding) and is what
+`tests/test_queries.json`'s `multi_hop_dependencies_oauth2` faithfulness score of
+0.40 is catching — not eval noise. Closing this needs a semantic per-claim verifier
+(an extra judge call per claim at generation time, with real added latency), which
+isn't implemented.
+
 ## Evaluation
 
 `tests/test_queries.json` holds three scenarios: a specific-fact lookup, a multi-hop
@@ -133,6 +147,14 @@ docker compose exec app python scripts/build_index.py   # one-time, builds the i
 The app then listens on `http://localhost:8000`, talking to the `ollama` service over
 the compose network. Both the index (`storage_data` volume) and the pulled model
 (`ollama_data` volume) persist across restarts.
+
+**Not build-tested.** This Dockerfile/compose setup was traced by hand against
+`config.py` and never run through an actual `docker build` (no Docker daemon was
+available while writing it) — verify it works before relying on it. One specific,
+known risk: `chromadb` has historically required a newer `libsqlite3` than some slim
+Debian base images ship. If the `app` container fails on Chroma import with an sqlite
+version error, install `pysqlite3-binary` and alias it over the stdlib `sqlite3`
+module (see chromadb's own troubleshooting docs) rather than downgrading chromadb.
 
 Operational surface for this deployment:
 - **Health check:** `GET /health` — returns `503` if Ollama isn't reachable, so a
