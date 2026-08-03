@@ -7,6 +7,8 @@ import ollama
 import config
 from src import rag
 
+_client = ollama.Client(host=config.OLLAMA_HOST, timeout=config.OLLAMA_TIMEOUT_SECONDS)
+
 JUDGE_PROMPT = """You are grading a RAG system's answer. Respond with ONLY a single integer from 0 to 5, nothing else.
 
 Question: {question}
@@ -25,7 +27,7 @@ RELEVANCE_CRITERION = "directly and completely addressing the question asked."
 
 
 def _judge(question: str, context: str, answer: str, criterion: str) -> float:
-    response = ollama.chat(
+    response = _client.chat(
         model=config.OLLAMA_MODEL,
         messages=[{"role": "user", "content": JUDGE_PROMPT.format(
             question=question, context=context, answer=answer, criterion=criterion,
@@ -50,23 +52,27 @@ def run() -> list[dict]:
 
     report = []
     for case in test_cases:
-        result = rag.query(case["query"])
-        context = "\n\n".join(c["text"] for c in result["retrieved"])
+        try:
+            result = rag.query(case["query"])
+            context = "\n\n".join(c["text"] for c in result["retrieved"])
 
-        row = {
-            "id": case["id"],
-            "type": case["type"],
-            "query": case["query"],
-            "answer": result["answer"],
-            "refused": result["refused"],
-            "context_recall": _context_recall(case["expected_facts"], result["retrieved"]),
-        }
+            row = {
+                "id": case["id"],
+                "type": case["type"],
+                "query": case["query"],
+                "answer": result["answer"],
+                "refused": result["refused"],
+                "context_recall": _context_recall(case["expected_facts"], result["retrieved"]),
+            }
 
-        if case["type"] == "negative":
-            row["refusal_correct"] = result["refused"]
-        else:
-            row["faithfulness"] = _judge(case["query"], context, result["answer"], FAITHFULNESS_CRITERION)
-            row["answer_relevance"] = _judge(case["query"], context, result["answer"], RELEVANCE_CRITERION)
+            if case["type"] == "negative":
+                row["refusal_correct"] = result["refused"]
+            else:
+                row["faithfulness"] = _judge(case["query"], context, result["answer"], FAITHFULNESS_CRITERION)
+                row["answer_relevance"] = _judge(case["query"], context, result["answer"], RELEVANCE_CRITERION)
+        except Exception as e:
+            # One query failing (e.g. a generation timeout) shouldn't abort the whole suite.
+            row = {"id": case["id"], "type": case["type"], "query": case["query"], "error": str(e)}
 
         report.append(row)
     return report
@@ -76,6 +82,9 @@ def print_report(report: list[dict]) -> None:
     for row in report:
         print(f"\n=== {row['id']} ({row['type']}) ===")
         print(f"Q: {row['query']}")
+        if "error" in row:
+            print(f"ERROR: {row['error']} [FAIL]")
+            continue
         print(f"A: {row['answer'][:300]}")
         print(f"context_recall: {row['context_recall']:.2f}")
         if row["type"] == "negative":

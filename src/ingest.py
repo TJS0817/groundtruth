@@ -1,4 +1,5 @@
 """Fetch FastAPI docs, chunk them with metadata, and populate the vector + BM25 indexes."""
+import logging
 import pickle
 import re
 from datetime import date
@@ -11,6 +12,8 @@ from sentence_transformers import SentenceTransformer
 
 import config
 
+logger = logging.getLogger(__name__)
+
 
 def fetch_docs() -> list[dict]:
     """Download the configured FastAPI doc pages. Skips pages that fail to fetch."""
@@ -21,7 +24,7 @@ def fetch_docs() -> list[dict]:
             resp = requests.get(url, timeout=15)
             resp.raise_for_status()
         except requests.RequestException as e:
-            print(f"  skip {page}: {e}")
+            logger.warning("skipping %s: %s", page, e)
             continue
         docs.append({"source": page, "text": resp.text})
     return docs
@@ -92,19 +95,19 @@ def chunk_document(source: str, text: str) -> list[dict]:
 def run() -> None:
     config.STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
-    print("Fetching FastAPI docs...")
+    logger.info("Fetching FastAPI docs...")
     docs = fetch_docs()
-    print(f"  fetched {len(docs)}/{len(config.FASTAPI_DOC_PAGES)} pages")
+    logger.info("fetched %d/%d pages", len(docs), len(config.FASTAPI_DOC_PAGES))
 
-    print("Chunking...")
+    logger.info("Chunking...")
     chunks = [c for d in docs for c in chunk_document(d["source"], d["text"])]
-    print(f"  produced {len(chunks)} chunks")
+    logger.info("produced %d chunks", len(chunks))
 
-    print(f"Embedding with {config.EMBEDDING_MODEL}...")
+    logger.info("Embedding with %s...", config.EMBEDDING_MODEL)
     embedder = SentenceTransformer(config.EMBEDDING_MODEL)
     embeddings = embedder.encode([c["text"] for c in chunks], show_progress_bar=True).tolist()
 
-    print("Writing Chroma collection...")
+    logger.info("Writing Chroma collection...")
     client = chromadb.PersistentClient(path=str(config.CHROMA_DIR))
     try:
         client.delete_collection(config.COLLECTION_NAME)
@@ -121,13 +124,13 @@ def run() -> None:
         ],
     )
 
-    print("Building BM25 index...")
+    logger.info("Building BM25 index...")
     tokenized = [c["text"].lower().split() for c in chunks]
     bm25 = BM25Okapi(tokenized)
     with open(config.BM25_PATH, "wb") as f:
         pickle.dump({"bm25": bm25, "ids": [c["id"] for c in chunks], "texts": [c["text"] for c in chunks]}, f)
 
-    print(f"Done. Indexed {len(chunks)} chunks from {len(docs)} documents.")
+    logger.info("Done. Indexed %d chunks from %d documents.", len(chunks), len(docs))
 
 
 if __name__ == "__main__":

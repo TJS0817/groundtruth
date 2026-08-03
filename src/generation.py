@@ -5,6 +5,8 @@ import ollama
 
 import config
 
+_client = ollama.Client(host=config.OLLAMA_HOST, timeout=config.OLLAMA_TIMEOUT_SECONDS)
+
 SYSTEM_PROMPT = """You are a documentation assistant. Answer ONLY using the provided context chunks.
 
 Rules:
@@ -27,8 +29,34 @@ def _valid_tags(chunks: list[dict]) -> set[str]:
     return {f"{c['source']}#{c['section']}" for c in chunks}
 
 
-def _citations_in(answer: str) -> list[str]:
-    return re.findall(r"\[source:\s*([^\]]+)\]", answer)
+def _split_claims(answer: str) -> tuple[list[tuple[str, str]], str]:
+    """Splits the answer at each citation tag into (claim_text, tag) pairs,
+    plus any trailing text after the last tag (which has no citation)."""
+    parts = re.split(r"(\[source:\s*[^\]]+\])", answer)
+    claims: list[tuple[str, str]] = []
+    buffer = ""
+    for part in parts:
+        m = re.match(r"^\[source:\s*([^\]]+)\]$", part)
+        if m:
+            claims.append((buffer.strip(), m.group(1).strip()))
+            buffer = ""
+        else:
+            buffer += part
+    return claims, buffer.strip()
+
+
+def _verify_claims(answer: str, chunks: list[dict]) -> tuple[str, list[str]]:
+    """Keeps only claims whose citation tag matches a retrieved chunk, dropping
+    hallucinated-citation or uncited claims individually rather than refusing
+    the whole answer over one bad tag."""
+    valid = _valid_tags(chunks)
+    claims, _trailing_uncited = _split_claims(answer)
+    kept_text, kept_tags = [], []
+    for text, tag in claims:
+        if text and tag in valid:
+            kept_text.append(f"{text} [source: {tag}]")
+            kept_tags.append(tag)
+    return " ".join(kept_text), kept_tags
 
 
 def generate(query: str, chunks: list[dict]) -> dict:
@@ -39,7 +67,7 @@ def generate(query: str, chunks: list[dict]) -> dict:
     context = _format_context(chunks)
     user_prompt = f"Context:\n{context}\n\nQuestion: {query}"
 
-    response = ollama.chat(
+    response = _client.chat(
         model=config.OLLAMA_MODEL,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -55,12 +83,9 @@ def generate(query: str, chunks: list[dict]) -> dict:
     if config.REFUSAL_TEXT in answer:
         return {"answer": config.REFUSAL_TEXT, "citations": [], "refused": True}
 
-    valid = _valid_tags(chunks)
-    cited = [tag.strip() for tag in _citations_in(answer)]
-    hallucinated = [tag for tag in cited if tag not in valid]
-
-    if not cited or hallucinated:
-        # Fail closed: no citations, or a citation that doesn't match retrieved context.
+    filtered, kept_tags = _verify_claims(answer, chunks)
+    if not filtered:
+        # Fail closed: no claim in the answer survived citation verification.
         return {"answer": config.REFUSAL_TEXT, "citations": [], "refused": True}
 
-    return {"answer": answer, "citations": cited, "refused": False}
+    return {"answer": filtered, "citations": kept_tags, "refused": False}

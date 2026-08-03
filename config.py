@@ -1,8 +1,16 @@
-"""Central configuration for the RAG pipeline."""
+"""Central configuration for the RAG pipeline.
+
+Deployment-relevant values (Ollama location/model, auth, timeouts, logging)
+read from the environment so the same image can run in different
+environments without a code change. Everything else (chunking, retrieval
+tuning) is a build-time knob edited directly here, not an env var.
+"""
+import logging
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).parent
-STORAGE_DIR = ROOT / "storage"
+STORAGE_DIR = Path(os.environ.get("STORAGE_DIR") or ROOT / "storage")
 CHROMA_DIR = STORAGE_DIR / "chroma"
 BM25_PATH = STORAGE_DIR / "bm25_index.pkl"
 
@@ -10,7 +18,25 @@ COLLECTION_NAME = "fastapi_docs"
 
 EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
 RERANKER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
-OLLAMA_MODEL = "qwen3:4b"
+
+# Ollama connection. OLLAMA_HOST lets the app reach a sidecar/remote Ollama
+# instance (e.g. the "ollama" service in docker-compose) instead of localhost.
+OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "qwen3:4b")
+OLLAMA_TIMEOUT_SECONDS = float(os.environ.get("OLLAMA_TIMEOUT_SECONDS", "300"))
+
+# API auth: if unset, the /api/ask endpoint is open (local/dev use). Set this
+# to require an X-API-Key header matching it.
+API_KEY = os.environ.get("API_KEY")
+
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
+SERVER_HOST = os.environ.get("SERVER_HOST", "127.0.0.1")
+SERVER_PORT = int(os.environ.get("SERVER_PORT", "8000"))
+
+logging.basicConfig(
+    level=LOG_LEVEL,
+    format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
+)
 
 # Chunking
 CHUNK_SIZE = 800          # max chars per chunk
