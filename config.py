@@ -16,7 +16,7 @@ BM25_PATH = STORAGE_DIR / "bm25_index.pkl"
 
 COLLECTION_NAME = "fastapi_docs"
 
-EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
+EMBEDDING_MODEL = "BAAI/bge-base-en-v1.5"
 RERANKER_MODEL = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
 # Ollama connection. OLLAMA_HOST lets the app reach a sidecar/remote Ollama
@@ -39,19 +39,20 @@ logging.basicConfig(
 )
 
 # Chunking
-CHUNK_SIZE = 800          # max chars per chunk
-CHUNK_OVERLAP = 120       # char overlap between adjacent chunks within a section
+CHUNK_SIZE = 1000         # max chars per chunk (raised to fit inlined code snippets more cleanly)
+CHUNK_OVERLAP = 150       # char overlap between adjacent chunks within a section
 
 # Retrieval
-DENSE_TOP_K = 15
-BM25_TOP_K = 15
+DENSE_TOP_K = 20
+BM25_TOP_K = 20
 RRF_K = 60                # standard RRF smoothing constant
-RERANK_TOP_K = 5          # final number of chunks passed to the LLM
+RERANK_TOP_K = 8          # final number of chunks passed to the LLM
 
 # Generation
 REFUSAL_TEXT = "I don't have enough information in the provided documents to answer that."
 
-FASTAPI_DOCS_BASE = "https://raw.githubusercontent.com/fastapi/fastapi/master/docs/en/docs"
+FASTAPI_REPO_BASE = "https://raw.githubusercontent.com/fastapi/fastapi/master"
+FASTAPI_DOCS_BASE = f"{FASTAPI_REPO_BASE}/docs/en/docs"
 FASTAPI_DOC_PAGES = [
     "tutorial/first-steps.md",
     "tutorial/path-params.md",

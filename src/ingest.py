@@ -14,10 +14,40 @@ import config
 
 logger = logging.getLogger(__name__)
 
+# FastAPI's docs reference code samples via {* ../../docs_src/foo/bar.py *}
+# (optionally with a trailing "hl[...]" line-highlight annotation) instead of
+# inlining the code. Left unresolved, facts that only exist in the referenced
+# .py file (e.g. a numeric default) are never indexed and the system correctly
+# but needlessly refuses questions about them.
+INCLUDE_RE = re.compile(r"\{\*\s*([^\s*]+\.py)[^*]*\*\}")
+
+
+def _inline_code_snippets(text: str, cache: dict[str, str | None]) -> str:
+    """Replaces each {* path *} include directive with the actual code, fetched once per path."""
+
+    def replace(m: re.Match) -> str:
+        path = m.group(1)
+        if path not in cache:
+            repo_path = re.sub(r"^(\.\./)+", "", path)
+            url = f"{config.FASTAPI_REPO_BASE}/{repo_path}"
+            try:
+                resp = requests.get(url, timeout=15)
+                resp.raise_for_status()
+                cache[path] = resp.text
+            except requests.RequestException as e:
+                logger.warning("skipping code include %s: %s", path, e)
+                cache[path] = None
+        code = cache[path]
+        return f"\n```python\n{code}\n```\n" if code else ""
+
+    return INCLUDE_RE.sub(replace, text)
+
 
 def fetch_docs() -> list[dict]:
-    """Download the configured FastAPI doc pages. Skips pages that fail to fetch."""
+    """Download the configured FastAPI doc pages, inlining referenced code
+    snippets. Skips pages that fail to fetch."""
     docs = []
+    snippet_cache: dict[str, str | None] = {}
     for page in config.FASTAPI_DOC_PAGES:
         url = f"{config.FASTAPI_DOCS_BASE}/{page}"
         try:
@@ -26,7 +56,7 @@ def fetch_docs() -> list[dict]:
         except requests.RequestException as e:
             logger.warning("skipping %s: %s", page, e)
             continue
-        docs.append({"source": page, "text": resp.text})
+        docs.append({"source": page, "text": _inline_code_snippets(resp.text, snippet_cache)})
     return docs
 
 

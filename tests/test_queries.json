@@ -1,12 +1,36 @@
 [
   {
-    "id": "fact_retrieval",
+    "id": "fact_cors_max_age",
     "type": "fact",
     "query": "In FastAPI's CORSMiddleware, what is the default value of the max_age parameter, in seconds?",
     "expected_facts": ["600", "max_age"]
   },
   {
-    "id": "multi_hop",
+    "id": "fact_cors_allow_methods",
+    "type": "fact",
+    "query": "What is the default value of allow_methods in FastAPI's CORSMiddleware?",
+    "expected_facts": ["GET", "allow_methods"]
+  },
+  {
+    "id": "fact_cors_allow_credentials",
+    "type": "fact",
+    "query": "What is the default value of allow_credentials in FastAPI's CORSMiddleware?",
+    "expected_facts": ["False", "allow_credentials"]
+  },
+  {
+    "id": "fact_settings_items_per_user",
+    "type": "fact",
+    "query": "In the FastAPI settings management example, what is the default value of the items_per_user setting?",
+    "expected_facts": ["50", "items_per_user"]
+  },
+  {
+    "id": "fact_jwt_token_expiry",
+    "type": "fact",
+    "query": "In the FastAPI OAuth2 JWT tutorial example, what is the default access token expiration time in minutes?",
+    "expected_facts": ["30", "ACCESS_TOKEN_EXPIRE_MINUTES"]
+  },
+  {
+    "id": "multi_hop_dependencies_oauth2",
     "type": "multi_hop",
     "query": "How does FastAPI's dependency injection system work together with OAuth2PasswordBearer to protect an endpoint?",
     "expected_facts": ["Depends", "OAuth2PasswordBearer", "dependency"]
