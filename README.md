@@ -49,7 +49,7 @@ python -m venv .venv
 ## Usage
 
 ```bash
-# Build the index (fetches 15 FastAPI doc pages, ~300 chunks)
+# Build the index (fetches 15 FastAPI doc pages + referenced code snippets, ~360 chunks)
 .venv/Scripts/python.exe scripts/build_index.py
 
 # Ask a question
@@ -111,7 +111,7 @@ to `.env` and adjust, or set them directly in your shell/orchestrator:
 |---|---|---|
 | `OLLAMA_HOST` | `http://127.0.0.1:11434` | Where the app reaches Ollama |
 | `OLLAMA_MODEL` | `qwen3:4b` | Generation model |
-| `OLLAMA_TIMEOUT_SECONDS` | `300` | Per-request timeout to Ollama |
+| `OLLAMA_TIMEOUT_SECONDS` | `480` | Per-request timeout to Ollama |
 | `API_KEY` | unset (auth disabled) | Required `X-API-Key` header value for `POST /api/ask` |
 | `LOG_LEVEL` | `INFO` | Python logging level |
 | `SERVER_HOST` / `SERVER_PORT` | `127.0.0.1` / `8000` | Where `scripts/serve.py` binds |

@@ -15,9 +15,9 @@ Rules:
 - If the context does not contain enough information to answer, respond with EXACTLY this sentence and nothing else:
 "{refusal}"
 
-Example of correctly formatted output, given a chunk tagged [source: tutorial/cors.md#Use `CORSMiddleware`]:
-Question: What is the default max_age for CORSMiddleware?
-Answer: The default value of max_age is 600 seconds. [source: tutorial/cors.md#Use `CORSMiddleware`]
+Example of correctly formatted output, given a chunk tagged [source: tutorial/cors.md#Use `CORSMiddleware` { #use-corsmiddleware }]:
+Question: What is the default value of expose_headers in CORSMiddleware?
+Answer: The default value of expose_headers is an empty list. [source: tutorial/cors.md#Use `CORSMiddleware` { #use-corsmiddleware }]
 """.format(refusal=config.REFUSAL_TEXT)
 
 
