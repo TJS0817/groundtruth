@@ -14,6 +14,27 @@ Fully local by design, so nothing in the corpus or the questions asked against i
 leaves the company's own infrastructure. It is not built for high-throughput
 multi-tenant serving (see [Limitations](#limitations)).
 
+### What to ask it
+
+With the FastAPI docs indexed (the demo corpus), it's tuned for the three question
+shapes it's evaluated on:
+
+- **Precise fact lookup** — e.g. "What's the default `max_age` for CORSMiddleware?",
+  "What's the default access token expiration in the JWT tutorial?"
+- **Multi-hop synthesis** — questions needing two doc sections combined, e.g. "How do
+  dependency injection and OAuth2PasswordBearer work together?"
+- **Anything outside FastAPI's docs** — it refuses rather than guesses. That's the
+  point of the system, not a gap to work around.
+
+Try it via `scripts/ask.py "your question"` (CLI) or `scripts/serve.py` + the web UI
+at `localhost:8000` (citations you can click through to the source chunk).
+
+**Not good for:** general knowledge (refuses by design), high query volume (single
+local model, one request at a time — see [Limitations](#limitations)), or anything
+where a citation being *structurally* real isn't enough on its own — see the known
+semantic-verification gap in [Guardrails](#guardrails) before using this for anything
+like a compliance or legal use case.
+
 ## Pipeline
 
 ```
